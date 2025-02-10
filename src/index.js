@@ -96,7 +96,71 @@ app.delete("/api/class/:id", async(req, res) => {
 });
 
 
+
+//ReadMany
+app.get("/api/category", async(req, res) => {
+    const categories = await prisma.category.findMany({
+        where:{
+            status: true
+        }
+    });
+     
+    res.status(200).json({
+        message: "Success get categories data",
+        datas: categories,
+    });
+});
+
+//Create
+app.post("/api/category", async(req, res) => {
+    const data= req.body;
+    const categoryData = await prisma.category.create({
+        data,
+    });
+     
+    res.status(200).json({
+        message: "Success create category data",
+        data: categoryData,
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}`);
 });
 
+//ReadbyId
+app.get("/api/category/:id", async(req, res) => {
+    const {id}= req.params;
+
+    const categoryData = await prisma.category.findFirst({
+        where:{
+            id,
+            status: true
+        }
+    });
+
+    res.status(200).json({
+        message: "Success get category data by id",
+        data: categoryData,
+    });
+})
+
+//Update
+app.patch("/api/category/:id", async(req, res) => {
+    const {id}= req.params;
+    const data=req.body;
+    const categoryData = await prisma.category.update({
+        where: {
+            id,
+            status: true
+        },
+        data,
+    });
+     
+    res.status(200).json({
+        message: "Success update category data",
+        data: categoryData,
+    });
+});
+
+//Delete

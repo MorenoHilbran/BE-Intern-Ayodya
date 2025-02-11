@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import {PrismaClient} from "@prisma/client";
 import bodyParser from "body-parser";
 import cors from "cors";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -164,3 +166,154 @@ app.patch("/api/category/:id", async(req, res) => {
 });
 
 //Delete
+app.delete("/api/category/:id", async(req, res) => {
+    const { id } = req.params;
+    const categoryData = await prisma.category.update({
+        where: {
+            id,
+            status: true
+        },
+        data: {
+            status: false
+        }
+        
+    });
+     
+    res.status(200).json({
+        message: "Success delete category data",
+        data: categoryData,
+    });
+});
+
+//REGISTER
+app.post("/api/user/register", async (req, res) => {
+    try {
+        const { name, email, phone, password } = req.body;
+
+        // Validasi input
+        if (!name || !email || !phone || !password) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // Cek apakah email atau phone sudah digunakan
+        const existingUser = await prisma.user.findFirst({
+            where: { OR: [{ email }, { phone }] },
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ message: "Email or Phone already exists" });
+        }
+        //hashing password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Buat user baru
+        const userData = await prisma.user.create({
+            data: { name, email, phone, password: hashedPassword },
+        });
+
+        res.status(201).json({ message: "User created successfully", data: userData });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+//Login
+app.post("/api/user/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Validasi input
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required" });
+        }
+
+        // Cari user berdasarkan email
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        // Cek apakah user ada
+        if (!user) {
+            return res.status(404).json({ message: "Pengguna Tidak Ditemukan" });
+        }
+
+        // Cek apakah password benar (sementara tanpa hashing)
+        const isPasswordValid = await bcrypt.compare (password, user.password);
+
+        if (!isPasswordValid){
+            return res.status(401).json({ message: "Invalid password" });
+        }
+
+
+        // Buat JWT Token
+        const token = jwt.sign({ id: user.id, email: user.email }, "SECRET_KEY", { expiresIn: "1h" });
+
+        res.status(200).json({ message: "Login successful", token });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+})
+
+//GET ALL USERS
+app.get("/api/user", async (req, res) => {
+    try {
+        const users = await prisma.user.findMany();
+        res.status(200).json({ message: "Success get users data", datas: users });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+//GET USER BY ID
+app.get("/api/user/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userData = await prisma.user.findUnique({ where: { id } });
+
+        if (!userData) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "Success get user data", data: userData });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+//UPDATE USER
+app.patch("/api/user/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+
+        // Cek apakah user ada
+        const existingUser = await prisma.user.findUnique({ where: { id } });
+        if (!existingUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update data
+        const updatedUser = await prisma.user.update({ where: { id }, data });
+
+        res.status(200).json({ message: "Success update user data", data: updatedUser });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});
+
+//DELETE USER
+app.delete("/api/user/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Cek apakah user ada
+        const existingUser = await prisma.user.findUnique({ where: { id } });
+        if (!existingUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        await prisma.user.delete({ where: { id } });
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+});

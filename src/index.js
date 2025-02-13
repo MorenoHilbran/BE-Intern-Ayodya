@@ -16,17 +16,25 @@ app.use(bodyParser.json());
 
 app.use(cors());
 //ReadMany
-app.get("/api/class", async(req, res) => {
-    const classes = await prisma.class.findMany({
-        where:{
-            status: true
-        }
-    });
-     
-    res.status(200).json({
-        message: "Success get classes data",
-        datas: classes,
-    });
+app.get("/api/class", async (req, res) => {
+    try {
+        const classes = await prisma.class.findMany({
+            where: {
+                status: true
+            },
+            include: {
+                category: true  
+            }
+            
+        });
+
+        res.status(200).json({
+            message: "Success get classes data",
+            datas: classes,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching classes", error });
+    }
 });
 
 //ReadbyId
@@ -47,35 +55,55 @@ app.get("/api/class/:id", async(req, res) => {
 });
 
 //Create
-app.post("/api/class", async(req, res) => {
-    const data= req.body;
-    const classData = await prisma.class.create({
-        data,
-    });
-     
-    res.status(200).json({
-        message: "Success create class data",
-        data: classData,
-    });
+app.post("/api/class", async (req, res) => {
+    try {
+        const { name, category, code, type, level, price, content } = req.body;
+
+        const newClass = await prisma.class.create({
+            data: {
+                name,
+                code,
+                type,
+                level,
+                price,
+                content,
+                category: category ? { connect: { id: category } } : undefined, 
+            },
+        });
+
+        res.status(201).json({ message: "Kelas berhasil ditambahkan!", data: newClass });
+    } catch (error) {
+        console.error("Error adding class:", error);
+        res.status(500).json({ message: "Gagal menambahkan kelas.", error });
+    }
 });
 
 //Update
-app.patch("/api/class/:id", async(req, res) => {
-    const {id}= req.params;
-    const data=req.body;
-    const classData = await prisma.class.update({
-        where: {
-            id,
-            status: true
-        },
-        data,
-    });
-     
-    res.status(200).json({
-        message: "Success update class data",
-        data: classData,
-    });
+app.patch("/api/class/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, category, code, type, level, price, content } = req.body;
+
+        const updatedClass = await prisma.class.update({
+            where: { id },
+            data: {
+                name,
+                code,
+                type,
+                level,
+                price,
+                content,
+                category: category ? { connect: { id: category } } : undefined, 
+            },
+        });
+
+        res.status(200).json({ message: "Kelas berhasil diperbarui!", data: updatedClass });
+    } catch (error) {
+        console.error("Error updating class:", error);
+        res.status(500).json({ message: "Gagal memperbarui kelas.", error });
+    }
 });
+
 
 //Delete
 app.delete("/api/class/:id", async(req, res) => {
@@ -317,3 +345,5 @@ app.delete("/api/user/:id", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 });
+
+//Crea

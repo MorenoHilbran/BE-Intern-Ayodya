@@ -1,12 +1,14 @@
-import express from "express";
-import dotenv from "dotenv";
-import {PrismaClient} from "@prisma/client";
-import bodyParser from "body-parser";
-import cors from "cors";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import { createClassValidation, updateClassValidation } from "./validation/classValidation.js";
-import { createCategoryValidation, updateCategoryValidation } from "./validation/categoryValidation.js";
+const express = require("express");
+const dotenv = require("dotenv");
+const { PrismaClient } = require("@prisma/client");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+
+// Import validasi dengan require (gunakan path relatif)
+const { createClassValidation, updateClassValidation } = require("./validation/classValidation.js");
+const { createCategoryValidation, updateCategoryValidation } = require("./validation/categoryValidation.js");
 
 const prisma = new PrismaClient();
 const app = express();

@@ -1,6 +1,6 @@
-import joi from "joi";
+const joi = require("joi");
 
-export const createClassValidation = (payload) => {
+const createClassValidation = (payload) => {
     const schema = joi.object({
         name: joi.string().required(),
         categoryId: joi.string().required(),
@@ -9,12 +9,11 @@ export const createClassValidation = (payload) => {
         level: joi.string().required(),
         price: joi.number().required(),
         content: joi.string().required(),
-       
     });
     return schema.validate(payload);
-}
+};
 
-export const updateClassValidation = (payload) => {
+const updateClassValidation = (payload) => {
     const schema = joi.object({
         name: joi.string(),
         categoryId: joi.string(),
@@ -25,4 +24,10 @@ export const updateClassValidation = (payload) => {
         content: joi.string(),
     }).min(1);
     return schema.validate(payload);
-}
+};
+
+// Ekspor menggunakan CommonJS
+module.exports = {
+    createClassValidation,
+    updateClassValidation
+};

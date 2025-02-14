@@ -1,14 +1,21 @@
-import joi from "joi";
+const joi = require("joi");
 
-export const createCategoryValidation = (payload) => {
+const createCategoryValidation = (payload) => {
     const schema = joi.object({
         name: joi.string().required(),    
     });
     return schema.validate(payload);
-}
-export const updateCategoryValidation = (payload) => {
+};
+
+const updateCategoryValidation = (payload) => {
     const schema = joi.object({
         name: joi.string(),    
     }).min(1);
     return schema.validate(payload);
-}
+};
+
+// Ekspor menggunakan CommonJS
+module.exports = {
+    createCategoryValidation,
+    updateCategoryValidation
+};

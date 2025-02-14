@@ -5,6 +5,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { createClassValidation, updateClassValidation } from "./validation/classValidation.js";
+import { createCategoryValidation, updateCategoryValidation } from "./validation/categoryValidation.js";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -56,19 +58,14 @@ app.get("/api/class/:id", async(req, res) => {
 
 //Create
 app.post("/api/class", async (req, res) => {
-    try {
-        const { name, category, code, type, level, price, content } = req.body;
+    const {error, value} = createClassValidation(req.body);
+    if (error) {
+        return res.status(422).json({ message: error.details[0].message });
+    }
 
+    try {
         const newClass = await prisma.class.create({
-            data: {
-                name,
-                code,
-                type,
-                level,
-                price,
-                content,
-                category: category ? { connect: { id: category } } : undefined, 
-            },
+            data: value,
         });
 
         res.status(201).json({ message: "Kelas berhasil ditambahkan!", data: newClass });
@@ -80,21 +77,17 @@ app.post("/api/class", async (req, res) => {
 
 //Update
 app.patch("/api/class/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, category, code, type, level, price, content } = req.body;
+    const { id } = req.params;
+    const {error, value} = updateClassValidation(req.body);
+   
 
+    if (error){
+        return res.status(422).json({ message: error.details[0].message });
+    }
+    try {
         const updatedClass = await prisma.class.update({
             where: { id },
-            data: {
-                name,
-                code,
-                type,
-                level,
-                price,
-                content,
-                category: category ? { connect: { id: category } } : undefined, 
-            },
+            data: value,
         });
 
         res.status(200).json({ message: "Kelas berhasil diperbarui!", data: updatedClass });
@@ -127,7 +120,7 @@ app.delete("/api/class/:id", async(req, res) => {
 
 
 
-//ReadMany
+//ReadManyCategory
 app.get("/api/category", async(req, res) => {
     const categories = await prisma.category.findMany({
         where:{
@@ -141,24 +134,29 @@ app.get("/api/category", async(req, res) => {
     });
 });
 
-//Create
+//CreateCategory
 app.post("/api/category", async(req, res) => {
-    const data= req.body;
-    const categoryData = await prisma.category.create({
-        data,
-    });
-     
-    res.status(200).json({
-        message: "Success create category data",
-        data: categoryData,
-    });
+    const { error, value } = createCategoryValidation(req.body);
+
+    try {
+        if (error) {
+            return res.status(422).json({ message: error.details[0].message });
+        }
+        const categoryData = await prisma.category.create({
+            data: value,
+        });
+        res.status(201).json({ message: "Success create category data", data: categoryData });
+    } catch (error) {
+        console.error("Error creating category:", error);
+        res.status(500).json({ message: "Gagal membuat kategori.", error });
+    }
 });
 
 app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}`);
 });
 
-//ReadbyId
+//ReadbyIdCategory
 app.get("/api/category/:id", async(req, res) => {
     const {id}= req.params;
 
@@ -175,22 +173,25 @@ app.get("/api/category/:id", async(req, res) => {
     });
 })
 
-//Update
+//UpdateCategory
 app.patch("/api/category/:id", async(req, res) => {
     const {id}= req.params;
-    const data=req.body;
-    const categoryData = await prisma.category.update({
-        where: {
-            id,
-            status: true
-        },
-        data,
-    });
-     
-    res.status(200).json({
-        message: "Success update category data",
-        data: categoryData,
-    });
+    const {error, value}=updateCategoryValidation(req.body);
+
+    try {
+        if (error) {
+            return res.status(422).json({ message: error.details[0].message });
+        }
+        const categoryData = await prisma.category.create({
+            where: id,
+            data: value,
+        });
+        res.status(201).json({ message: "Success create category data", data: categoryData });
+    } catch (error) {
+        console.error("Error creating category:", error);
+        res.status(500).json({ message: "Gagal membuat kategori.", error });
+    }
+   
 });
 
 //Delete
